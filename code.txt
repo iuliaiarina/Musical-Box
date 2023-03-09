@@ -1,0 +1,278 @@
+#include <Servo.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_NeoMatrix.h>
+#include <Adafruit_NeoPixel.h>
+#ifndef PSTR
+ #define PSTR // Make Arduino Due happy
+#endif
+#define PIN 53 
+#include "pitches.h"
+
+Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8, 8, PIN,
+  NEO_MATRIX_BOTTOM     + NEO_MATRIX_RIGHT +
+  NEO_MATRIX_ROWS + NEO_MATRIX_PROGRESSIVE,
+  NEO_GRB            + NEO_KHZ400);
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, PIN, NEO_GRB + NEO_KHZ400);
+
+int tempo = 140;
+int melody[] = {
+  NOTE_C5,4,
+  NOTE_F5,4, NOTE_F5,8, NOTE_G5,8, NOTE_F5,8, NOTE_E5,8,
+  NOTE_D5,4, NOTE_D5,4, NOTE_D5,4,
+  NOTE_G5,4, NOTE_G5,8, NOTE_A5,8, NOTE_G5,8, NOTE_F5,8,
+  NOTE_E5,4, NOTE_C5,4, NOTE_C5,4,
+  NOTE_A5,4, NOTE_A5,8, NOTE_AS5,8, NOTE_A5,8, NOTE_G5,8,
+  NOTE_F5,4, NOTE_D5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+
+  NOTE_F5,2, NOTE_C5,4,
+  NOTE_F5,4, NOTE_F5,8, NOTE_G5,8, NOTE_F5,8, NOTE_E5,8,
+  NOTE_D5,4, NOTE_D5,4, NOTE_D5,4,
+  NOTE_G5,4, NOTE_G5,8, NOTE_A5,8, NOTE_G5,8, NOTE_F5,8,
+  NOTE_E5,4, NOTE_C5,4, NOTE_C5,4,
+  NOTE_A5,4, NOTE_A5,8, NOTE_AS5,8, NOTE_A5,8, NOTE_G5,8,
+  NOTE_F5,4, NOTE_D5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+  NOTE_F5,2, NOTE_C5,4,
+
+  NOTE_F5,4, NOTE_F5,4, NOTE_F5,4,
+  NOTE_E5,2, NOTE_E5,4,
+  NOTE_F5,4, NOTE_E5,4, NOTE_D5,4,
+  NOTE_C5,2, NOTE_A5,4,
+  NOTE_AS5,4, NOTE_A5,4, NOTE_G5,4,
+  NOTE_C6,4, NOTE_C5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+  NOTE_F5,2, NOTE_C5,4, 
+  NOTE_F5,4, NOTE_F5,8, NOTE_G5,8, NOTE_F5,8, NOTE_E5,8,
+  NOTE_D5,4, NOTE_D5,4, NOTE_D5,4,
+  
+  NOTE_G5,4, NOTE_G5,8, NOTE_A5,8, NOTE_G5,8, NOTE_F5,8, 
+  NOTE_E5,4, NOTE_C5,4, NOTE_C5,4,
+  NOTE_A5,4, NOTE_A5,8, NOTE_AS5,8, NOTE_A5,8, NOTE_G5,8,
+  NOTE_F5,4, NOTE_D5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+  NOTE_F5,2, NOTE_C5,4,
+  NOTE_F5,4, NOTE_F5,4, NOTE_F5,4,
+  NOTE_E5,2, NOTE_E5,4,
+  NOTE_F5,4, NOTE_E5,4, NOTE_D5,4,
+  
+  NOTE_C5,2, NOTE_A5,4,
+  NOTE_AS5,4, NOTE_A5,4, NOTE_G5,4,
+  NOTE_C6,4, NOTE_C5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+  NOTE_F5,2, NOTE_C5,4, 
+  NOTE_F5,4, NOTE_F5,8, NOTE_G5,8, NOTE_F5,8, NOTE_E5,8,
+  NOTE_D5,4, NOTE_D5,4, NOTE_D5,4,
+  NOTE_G5,4, NOTE_G5,8, NOTE_A5,8, NOTE_G5,8, NOTE_F5,8, 
+  NOTE_E5,4, NOTE_C5,4, NOTE_C5,4,
+  
+  NOTE_A5,4, NOTE_A5,8, NOTE_AS5,8, NOTE_A5,8, NOTE_G5,8,
+  NOTE_F5,4, NOTE_D5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+  NOTE_F5,2, NOTE_C5,4,
+  NOTE_F5,4, NOTE_F5,8, NOTE_G5,8, NOTE_F5,8, NOTE_E5,8,
+  NOTE_D5,4, NOTE_D5,4, NOTE_D5,4,
+  NOTE_G5,4, NOTE_G5,8, NOTE_A5,8, NOTE_G5,8, NOTE_F5,8,
+  NOTE_E5,4, NOTE_C5,4, NOTE_C5,4,
+  
+  NOTE_A5,4, NOTE_A5,8, NOTE_AS5,8, NOTE_A5,8, NOTE_G5,8,
+  NOTE_F5,4, NOTE_D5,4, NOTE_C5,8, NOTE_C5,8,
+  NOTE_D5,4, NOTE_G5,4, NOTE_E5,4,
+  NOTE_F5,2, REST,4
+};
+
+int notes = sizeof(melody) / sizeof(melody[0]) / 2;
+int wholenote = (60000 * 4) / tempo;
+int divider = 0, noteDuration = 0;
+
+Servo servoOpen;
+Servo servoUp;
+Servo servoRotire;
+Servo servoLed;
+
+int RedButtonPin = 20, YellowButtonPin = 21;
+int Sensor = A0, servoOpenPin = 9,servoUpPin = 8,servoRotirePin =7,servoLedPin = 6, buzzerPin = 14;
+int boxState = 0;
+int status_sensor,stopBox;
+int mode = 0;
+
+void setup() {
+  //servo
+  servoUp.attach(servoUpPin);
+  servoUp.write(100);//down pos
+  
+  servoOpen.attach(servoOpenPin);
+  servoOpen.write(15);// closed pos
+
+  servoLed.attach(servoLedPin);
+  servoLed.write(100);// closed pos
+
+   Serial.begin(9600);
+   // interrupt
+   pinMode(RedButtonPin ,INPUT_PULLUP); 
+   pinMode(YellowButtonPin ,INPUT_PULLUP); 
+   attachInterrupt(digitalPinToInterrupt(RedButtonPin), red, FALLING);
+   attachInterrupt(digitalPinToInterrupt(YellowButtonPin), yellow, FALLING);
+
+  //sensor
+  pinMode(Sensor, INPUT);
+  Serial.begin(9600);
+
+  //8x8 matrix
+
+  matrix.begin();
+  matrix.setTextWrap(false);
+  matrix.setBrightness(10);
+
+  strip.begin();
+  strip.setBrightness(10);
+  mode =0;
+}
+
+
+void loop() {
+  if (boxState==0){
+    status_sensor = analogRead(Sensor);
+    //Serial.println(status_sensor); // testare senzor
+    if(status_sensor > 100 && status_sensor < 150){ //100
+      //Serial.println("delay");
+      status_sensor = analogRead(Sensor);
+      //Serial.println(status_sensor);
+      //if(status_sensor < 30){
+          Serial.print("CLAP");
+          OpenBox();
+     // }
+      delay(5000);
+    }
+    delay(10);
+  }
+}
+
+void red() 
+{
+  Serial.println("rosu");
+  stopBox = 1;
+}
+
+void yellow()
+{
+  //Serial.println("galben");
+  mode++;
+  Serial.println(mode);
+}
+
+void OpenBox(){
+    int j = 90;
+    for(int i=15;i<=115; i++){
+      servoOpen.write(i);
+      if(j!=0){
+        servoLed.write(j);
+        j--;
+      }
+      delay(15);
+    }
+    
+    stopBox=0;
+    Start();
+    CloseBox();
+}
+
+void CloseBox(){
+    int j = 0;
+    for(int i=115;i>=15; i--){
+      servoOpen.write(i);
+      if(j!=90){
+        servoLed.write(j);
+        j++;
+      }
+      delay(15);
+    }
+    servoLed.write(100);
+}
+
+
+void up(){
+  for(int i=100; i>=10; i--){  
+    servoUp.write(i);
+    delay(15);
+  }
+}
+
+void down(){
+  delay(1000);
+  for(int i=10;i<=100; i++){
+      servoUp.write(i);
+      delay(15);
+    }
+  delay(1000);
+}
+
+void Start(){
+  up();
+
+  //rotire:
+  servoRotire.attach(servoRotirePin);
+   if(mode==0){ 
+    uint16_t i=0;
+    uint32_t c1=strip.Color(0, 255, 0);
+    uint32_t c2=strip.Color(255, 0, 0);
+    for (int thisNote = 0; thisNote < notes * 2; thisNote = thisNote + 2) {
+      if (stopBox == 1){  //stop
+        break;
+      }
+      
+      if (i>1+strip.numPixels()){
+        i=0;
+        c1=strip.Color(165,42,42);
+        c2=strip.Color(127,127,0);
+      }
+      i++;
+        uint32_t x=c1;
+        for (int j=i ; j>=0 ;j=j-3)
+        {
+          if (x==c1){
+            x = c2;
+          }else x= c1;
+          strip.setPixelColor(j, x);
+        }
+        if (i<8)
+          strip.setPixelColor(i, c1);
+        strip.show();
+        
+      divider = melody[thisNote + 1];
+      if (divider > 0) {
+        noteDuration = (wholenote) / divider;
+      } else if (divider < 0) {
+        noteDuration = (wholenote) / abs(divider);
+        noteDuration *= 1.5; 
+      }
+      
+      tone(buzzerPin, melody[thisNote], noteDuration * 0.9);
+  
+      delay(noteDuration);
+      noTone(buzzerPin);
+    }
+   }
+  servoRotire.detach();
+  
+  down();
+  if (stopBox == 0){  //stop
+    printTextMatrix(matrix.Color(255, 0, 0));
+  }
+  stopBox = 0;
+  matrix.fillScreen(0);
+  matrix.show();
+
+}
+
+void printTextMatrix(uint16_t color){
+  matrix.setTextColor(color);
+  int x = matrix.width();
+  while(--x >= -90){
+    matrix.fillScreen(0);
+    matrix.setCursor(x, 0);
+    matrix.print(F("Craciun fericit! "));
+    matrix.show();
+    delay(100);
+  }
+}
